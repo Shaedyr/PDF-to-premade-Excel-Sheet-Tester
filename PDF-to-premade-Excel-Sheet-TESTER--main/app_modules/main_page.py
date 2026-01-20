@@ -38,7 +38,7 @@ def run():
     results = []
 
     if query and len(query) >= 2:
-        results = search_brreg_live(query)
+        results = search_BRREG_live(query)
 
         if not isinstance(results, list):
             results = []
@@ -156,5 +156,6 @@ def run():
             excel_bytes=excel_bytes,
             company_name=merged_fields.get("company_name", "Selskap")
         )
+
 
 
