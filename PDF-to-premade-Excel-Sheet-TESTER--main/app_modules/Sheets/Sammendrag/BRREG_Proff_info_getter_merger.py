@@ -1,5 +1,5 @@
-from app_modules.Sheets.Sammendrag.Brreg_info_getter import get_brreg_data
-from app_modules.Sheets.Sammendrag.Proff_info_getter import get_proff_data
+from app_modules.Sheets.Sammendrag.brreg_info_getter import get_brreg_data
+from app_modules.Sheets.Sammendrag.proff_info_getter import get_proff_data
 
 
 def merge_company_data(org_number: str) -> dict:
