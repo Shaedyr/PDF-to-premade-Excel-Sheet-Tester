@@ -1,5 +1,5 @@
 from app_modules.Sheets.Sammendrag.BRREG_info_getter import get_BRREG_data
-from app_modules.Sheets.Sammendrag.proff_info_getter import get_proff_data
+from app_modules.Sheets.Sammendrag.Proff_info_getter import get_Proff_data
 
 
 def merge_company_data(org_number: str) -> dict:
@@ -12,20 +12,20 @@ def merge_company_data(org_number: str) -> dict:
     """
 
     BRREG_data = get_BRREG_data(org_number) or {}
-    proff_data = get_proff_data(org_number) or {}
+    Proff_data = get_Proff_data(org_number) or {}
 
     merged = BRREG_data.copy()
 
     # Always prefer Proff revenue
-    if proff_data.get("revenue_2024"):
-        merged["revenue_2024"] = proff_data["revenue_2024"]
+    if Proff_data.get("revenue_2024"):
+        merged["revenue_2024"] = Proff_data["revenue_2024"]
 
     # Add financials if present
-    if proff_data.get("financials"):
-        merged["financials"] = proff_data["financials"]
+    if Proff_data.get("financials"):
+        merged["financials"] = Proff_data["financials"]
 
     # Fill missing fields from Proff
-    for key, value in proff_data.items():
+    for key, value in Proff_data.items():
         if not merged.get(key):
             merged[key] = value
 
