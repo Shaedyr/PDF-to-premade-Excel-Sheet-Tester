@@ -98,6 +98,14 @@ def format_company_data(api_data):
         out["nace_code"] = nace.get("kode", "")
         out["nace_description"] = nace.get("beskrivelse", "")
 
+    # Company summary
+    out["company_summary"] = (
+    f"{out['company_name']} er et registrert norsk selskap. "
+    f"Selskapet ble registrert i {api_data.get('registreringsdatoEnhetsregisteret', '')}. "
+    f"Selskapet har {out['employees']} ansatte. "
+    f"Virksomheten opererer innen bransjen: {out['nace_description']}."
+    )
+
     return out
 
 
