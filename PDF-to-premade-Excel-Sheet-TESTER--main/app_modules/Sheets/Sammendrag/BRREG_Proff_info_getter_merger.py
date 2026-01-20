@@ -11,10 +11,10 @@ def merge_company_data(org_number: str) -> dict:
     - Proff adds financials.
     """
 
-    brreg_data = get_brreg_data(org_number) or {}
+    BRREG_data = get_BRREG_data(org_number) or {}
     proff_data = get_proff_data(org_number) or {}
 
-    merged = brreg_data.copy()
+    merged = BRREG_data.copy()
 
     # Always prefer Proff revenue
     if proff_data.get("revenue_2024"):
