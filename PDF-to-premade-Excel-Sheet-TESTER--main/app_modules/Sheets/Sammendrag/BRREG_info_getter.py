@@ -8,7 +8,7 @@ BRREG_ENTITY_URL = "https://data.brreg.no/enhetsregisteret/api/enheter/{}"
 # ---------------------------------------------------------
 # LIVE SEARCH
 # ---------------------------------------------------------
-def search_brreg_live(name: str):
+def search_BRREG_live(name: str):
     """
     Live search for companies in Brønnøysund.
     Returns a list of raw API objects.
