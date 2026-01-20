@@ -1,6 +1,9 @@
 from openpyxl import load_workbook
 from openpyxl.styles import PatternFill
 from io import BytesIO
+from app_modules.Sheets.Sammendrag.cell_mapping import CELL_MAP
+
+excel_bytes = fill_excel(template_bytes, field_values, CELL_MAP)
 
 HEADLINE_COLORS = ["FF0BD7B5", "0BD7B5"]
 
@@ -35,3 +38,4 @@ def fill_excel(template_bytes, field_values, cell_map):
     wb.save(out)
     out.seek(0)
     return out.getvalue()
+
