@@ -145,3 +145,13 @@ def run():
     st.title("📝 Summary Module")
     st.write("Dette modulen genererer selskapsbeskrivelser fra flere kilder.")
     st.info("Brukes av hovedsiden for å lage 'Om oss'‑tekst.")
+
+def place_summary(ws, summary_text: str):
+    """
+    Places the summary text into the Sammendrag sheet.
+    Adjust the cell reference to match your template.
+    """
+    if not ws or not summary_text:
+        return
+    # Example: put it in cell B5 (change if your template uses another cell)
+    ws["B5"] = summary_text
