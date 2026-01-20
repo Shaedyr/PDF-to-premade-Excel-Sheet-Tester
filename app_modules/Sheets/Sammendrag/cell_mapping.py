@@ -16,7 +16,7 @@ CELL_MAP = {
         "company_today": "B13",        # Today's company status
     
         "economy": "B16",              # Economy / financial situation
-        "company_summary": "A51"       # Summary text (Om oss)
+        "company_summary": "A51",       # Summary text (Om oss)
 
         #Financial figures for the last 3 years 2024-2022 (Proff.no)
         "revenue_2024": "E11",
