@@ -9,7 +9,7 @@ from app_modules.Sheets.Sammendrag.BRREG_Proff_info_getter_merger import merge_c
 from app_modules.Sheets.Sammendrag.Summary_getter import generate_company_summary, place_summary
 from app_modules.pdf_parser import extract_fields_from_pdf
 from app_modules.excel_filler import fill_excel
-from app_modules.download import download_excel_file
+from app_modules.Excel_download import download_excel_file
 from app_modules.Sheets.Sammendrag.cell_mapping import CELL_MAP
 
 # OPTIONAL: You will implement this later
@@ -156,6 +156,7 @@ def run():
             excel_bytes=excel_bytes,
             company_name=merged_fields.get("company_name", "Selskap")
         )
+
 
 
 
