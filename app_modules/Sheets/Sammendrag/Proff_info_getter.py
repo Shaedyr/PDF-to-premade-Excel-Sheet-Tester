@@ -3,20 +3,13 @@ from bs4 import BeautifulSoup
 
 PROFF_BASE_URL = "https://www.proff.no/selskap/{orgnr}"
 
-
 # ---------------------------------------------------------
 # Fetch HTML from Proff.no
 # ---------------------------------------------------------
 def fetch_Proff_html(org_number: str):
-    """
-    Downloads the Proff.no company page for the given org number.
-    Returns HTML text or None.
-    """
     if not org_number or not org_number.isdigit():
         return None
-
     url = PROFF_BASE_URL.format(orgnr=org_number)
-
     try:
         r = requests.get(url, timeout=10)
         r.raise_for_status()
@@ -24,115 +17,71 @@ def fetch_Proff_html(org_number: str):
     except Exception:
         return None
 
-
 # ---------------------------------------------------------
-# Extract revenue (Sum driftsinntekter) for 2024
+# Extract homepage (optional)
 # ---------------------------------------------------------
-def extract_revenue_2024(soup: BeautifulSoup):
-    """
-    Finds 'Sum driftsinntekter' for year 2024 in the Regnskap table.
-    Returns integer revenue in NOK or None.
-    """
+def extract_homepage(soup: BeautifulSoup) -> str:
     try:
-        table = soup.find("table", {"class": "financial-table"})
-        if not table:
-            return None
-
-        # Find header row to identify column index for 2024
-        header_cells = table.find("thead").find_all("th")
-        year_index = None
-
-        for idx, th in enumerate(header_cells):
-            if "2024" in th.get_text(strip=True):
-                year_index = idx
-                break
-
-        if year_index is None:
-            return None
-
-        # Find the row for "Sum driftsinntekter"
-        rows = table.find("tbody").find_all("tr")
-        for row in rows:
-            label = row.find("td").get_text(strip=True).lower()
-            if "sum driftsinntekter" in label:
-                cells = row.find_all("td")
-                raw_value = cells[year_index].get_text(strip=True)
-
-                # Clean number
-                raw_value = raw_value.replace(" ", "").replace(".", "").replace(",", "")
-                if raw_value.isdigit():
-                    # Proff uses "Beløp i 1000"
-                    return int(raw_value) * 1000
-
-        return None
-
+        link = soup.find("a", href=True, string=lambda t: t and "hjemmeside" in t.lower())
+        if link:
+            return link["href"].strip()
+        info_box = soup.find("div", {"class": "company-info"})
+        if info_box:
+            a = info_box.find("a", href=True)
+            if a and "proff.no" not in a["href"]:
+                return a["href"].strip()
     except Exception:
-        return None
-
+        pass
+    return ""
 
 # ---------------------------------------------------------
-# Extract additional financials (optional)
+# Extract financials for all available years
 # ---------------------------------------------------------
-def extract_financials(soup: BeautifulSoup):
-    """
-    Extracts driftsresultat, resultat før skatt, sum eiendeler, egenkapital.
-    Returns a dict or empty dict.
-    """
+def extract_financials_all_years(soup: BeautifulSoup) -> dict:
     out = {}
-
     try:
         table = soup.find("table", {"class": "financial-table"})
         if not table:
             return out
 
         header_cells = table.find("thead").find_all("th")
-        year_index = None
-
+        years = {}
         for idx, th in enumerate(header_cells):
-            if "2024" in th.get_text(strip=True):
-                year_index = idx
-                break
-
-        if year_index is None:
-            return out
+            text = th.get_text(strip=True)
+            if text.isdigit():  # e.g. "2022", "2023", "2024"
+                years[text] = idx
 
         rows = table.find("tbody").find_all("tr")
 
-        for row in rows:
-            label = row.find("td").get_text(strip=True).lower()
-            cells = row.find_all("td")
+        for year, idx in years.items():
+            for row in rows:
+                label = row.find("td").get_text(strip=True).lower()
+                cells = row.find_all("td")
+                if idx >= len(cells):
+                    continue
 
-            raw_value = cells[year_index].get_text(strip=True)
-            cleaned = raw_value.replace(" ", "").replace(".", "").replace(",", "")
+                raw_value = cells[idx].get_text(strip=True)
+                cleaned = raw_value.replace(" ", "").replace(".", "").replace(",", "")
+                value = int(cleaned) * 1000 if cleaned.isdigit() else None
 
-            if cleaned.isdigit():
-                value = int(cleaned) * 1000
-            else:
-                value = None
-
-            if "driftsresultat" in label:
-                out["driftsresultat"] = value
-            elif "resultat før skatt" in label or "ord. res. f. skatt" in label:
-                out["resultat_for_skatt"] = value
-            elif "sum eiend" in label:
-                out["sum_eiendeler"] = value
-            elif "egenkapital" in label:
-                out["egenkapital"] = value
-
+                if "sum driftsinntekter" in label:
+                    out[f"revenue_{year}"] = value
+                elif "driftsresultat" in label:
+                    out[f"driftsresultat_{year}"] = value
+                elif "resultat før skatt" in label or "ord. res. f. skatt" in label:
+                    out[f"resultat_for_skatt_{year}"] = value
+                elif "sum eiend" in label:
+                    out[f"sum_eiendeler_{year}"] = value
+                elif "egenkapital" in label:
+                    out[f"egenkapital_{year}"] = value
         return out
-
     except Exception:
         return out
-
 
 # ---------------------------------------------------------
 # High-level wrapper
 # ---------------------------------------------------------
 def get_Proff_data(org_number: str) -> dict:
-    """
-    High-level wrapper: fetches Proff HTML and extracts revenue + financials.
-    Returns a dict with keys used by the merger.
-    """
     html = fetch_Proff_html(org_number)
     if not html:
         return {}
@@ -140,12 +89,11 @@ def get_Proff_data(org_number: str) -> dict:
     soup = BeautifulSoup(html, "html.parser")
 
     data = {}
-    revenue = extract_revenue_2024(soup)
-    if revenue:
-        data["revenue_2024"] = revenue
+    homepage = extract_homepage(soup)
+    if homepage:
+        data["homepage"] = homepage
 
-    financials = extract_financials(soup)
-    if financials:
-        data["financials"] = financials
+    financials = extract_financials_all_years(soup)
+    data.update(financials)
 
     return data
