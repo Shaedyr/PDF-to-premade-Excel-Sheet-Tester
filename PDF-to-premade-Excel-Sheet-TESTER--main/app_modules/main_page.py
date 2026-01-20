@@ -1,15 +1,14 @@
 import streamlit as st
 
 from app_modules.template_loader import load_template
-from app_modules.company_data import (
-    fetch_company_by_org,
-    format_company_data,
-    search_brreg_live
-)
-from app_modules.summary import generate_company_summary
+from app_modules.Sheets.Sammendrag.Brreg_info_getter import fetch_company_by_org, search_brreg_live
+from app_modules.Sheets.Sammendrag.Proff_info_getter import get_proff_data
+from app_modules.Sheets.Sammendrag.BRREG_Proff_info_getter_merger import merge_company_data
+from app_modules.Sheets.Sammendrag.Summary_getter import generate_company_summary, place_summary
 from app_modules.pdf_parser import extract_fields_from_pdf
 from app_modules.excel_filler import fill_excel
 from app_modules.download import download_excel_file
+from app_modules.Sheets.Sammendrag.cell_mapping import CELL_MAP
 
 # OPTIONAL: You will implement this later
 def fetch_from_proff(org_number: str) -> dict:
@@ -84,7 +83,7 @@ def run():
         else selected_company_raw
     )
 
-    company_data = format_company_data(raw_company_data)
+    company_data = merge_company_data(org_number)
 
     # ---------------------------------------------------------
     # STEP B: FALLBACK TO PROFF.NO IF BRREG IS MISSING FIELDS
@@ -146,11 +145,13 @@ def run():
             excel_bytes = fill_excel(
                 template_bytes=template_bytes,
                 field_values=merged_fields,
-                summary_text=summary_text,
+                cell_map=CELL_MAP
             )
+               
 
         download_excel_file(
             excel_bytes=excel_bytes,
             company_name=merged_fields.get("company_name", "Selskap")
         )
+
 
