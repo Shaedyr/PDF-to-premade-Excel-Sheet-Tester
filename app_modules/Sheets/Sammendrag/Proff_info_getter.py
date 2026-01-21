@@ -97,13 +97,9 @@ def extract_financials_all_years(soup: BeautifulSoup) -> dict:
         return out
 
 # ---------------------------------------------------------
-# High-level wrapper
+# Get_Proff_data
 # ---------------------------------------------------------
 def get_Proff_data(org_number: str) -> dict:
-    """
-    High-level wrapper: fetches Proff HTML and extracts homepage + multi-year financials.
-    Returns a dict with keys used by the merger and Excel filler.
-    """
     html = fetch_Proff_html(org_number)
     if not html:
         return {}
@@ -112,13 +108,12 @@ def get_Proff_data(org_number: str) -> dict:
 
     data = {}
 
-    # Homepage
     homepage = extract_homepage(soup)
     if homepage:
         data["homepage"] = homepage
 
-    # Multi-year financials (2022, 2023, 2024)
     financials = extract_financials_all_years(soup)
     data.update(financials)
 
     return data
+
