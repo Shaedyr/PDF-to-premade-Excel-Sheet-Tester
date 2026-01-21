@@ -5,14 +5,10 @@ from bs4 import BeautifulSoup
 # Fetch HTML from Proff.no
 # ---------------------------------------------------------
 def fetch_Proff_html(org_number: str):
-    """
-    Downloads the Proff.no company page for the given org number.
-    Returns HTML text or None.
-    """
     if not org_number or not org_number.isdigit():
         return None
 
-    url =  f"https://www.proff.no/regnskap/{org_number}"
+    url = f"https://www.proff.no/regnskap/{org_number}"
 
     try:
         r = requests.get(url, timeout=10)
@@ -21,20 +17,16 @@ def fetch_Proff_html(org_number: str):
     except Exception:
         return None
 
+
 # ---------------------------------------------------------
 # Extract homepage
 # ---------------------------------------------------------
 def extract_homepage(soup: BeautifulSoup) -> str:
-    """
-    Extracts homepage URL from Proff company profile.
-    """
     try:
-        # Look for link with "Hjemmeside"
         link = soup.find("a", href=True, string=lambda t: t and "hjemmeside" in t.lower())
         if link:
             return link["href"].strip()
 
-        # Fallback: look for any external link in company info box
         info_box = soup.find("div", {"class": "company-info"})
         if info_box:
             a = info_box.find("a", href=True)
@@ -44,6 +36,7 @@ def extract_homepage(soup: BeautifulSoup) -> str:
         pass
     return ""
 
+
 # ---------------------------------------------------------
 # Extract financials for all available years
 # ---------------------------------------------------------
@@ -52,11 +45,11 @@ def extract_financials_all_years(soup: BeautifulSoup) -> dict:
     try:
         table = soup.find("table", {"class": "table table-striped"})
         if not table:
+            print("TABLE FOUND: False")
             return out
 
-        print("TABLE FOUND:", table is not None)
+        print("TABLE FOUND: True")
 
-        # Identify year columns
         header_cells = table.find("thead").find_all("th")
         years = {}
         for idx, th in enumerate(header_cells):
@@ -81,7 +74,7 @@ def extract_financials_all_years(soup: BeautifulSoup) -> dict:
                     out[f"revenue_{year}"] = value
                 elif "driftsresultat" in label:
                     out[f"driftsresultat_{year}"] = value
-                elif ("resultat før skatt" in label or 
+                elif ("resultat før skatt" in label or
                       "ordinært resultat før skatt" in label):
                     out[f"resultat_for_skatt_{year}"] = value
                 elif "sum eiend" in label:
@@ -93,22 +86,19 @@ def extract_financials_all_years(soup: BeautifulSoup) -> dict:
     except Exception:
         return out
 
+
 # ---------------------------------------------------------
-# Get_Proff_data
+# Get Proff data
 # ---------------------------------------------------------
 def get_Proff_data(org_number: str) -> dict:
     print("get_Proff_data WAS CALLED")
 
-def get_Proff_data(org_number: str) -> dict:
     html = fetch_Proff_html(org_number)
-
     if not html:
         print("No HTML returned from Proff.no")
         return {}
 
-    print(html[:5000])   # TEMP DEBUG
     print("HTML LENGTH:", len(html))
-
 
     soup = BeautifulSoup(html, "html.parser")
 
@@ -121,5 +111,5 @@ def get_Proff_data(org_number: str) -> dict:
     financials = extract_financials_all_years(soup)
     data.update(financials)
 
+    print("PROFF DATA:", data)
     return data
-
