@@ -48,23 +48,18 @@ def extract_homepage(soup: BeautifulSoup) -> str:
 # Extract financials for all available years
 # ---------------------------------------------------------
 def extract_financials_all_years(soup: BeautifulSoup) -> dict:
-    """
-    Extracts revenue, EBIT (driftsresultat), and result before tax
-    for all available years (e.g. 2022, 2023, 2024).
-    Returns a dict keyed by year.
-    """
     out = {}
     try:
-        table = soup.find("table", {"class": "financial-table"})
+        table = soup.find("table", {"class": "table table-striped"})
         if not table:
             return out
 
-        # Identify year columns from header
+        # Identify year columns
         header_cells = table.find("thead").find_all("th")
         years = {}
         for idx, th in enumerate(header_cells):
             text = th.get_text(strip=True)
-            if text.isdigit():  # e.g. "2022", "2023", "2024"
+            if text.isdigit():
                 years[text] = idx
 
         rows = table.find("tbody").find_all("tr")
@@ -78,18 +73,20 @@ def extract_financials_all_years(soup: BeautifulSoup) -> dict:
 
                 raw_value = cells[idx].get_text(strip=True)
                 cleaned = raw_value.replace(" ", "").replace(".", "").replace(",", "")
-                value = int(cleaned) * 1000 if cleaned.isdigit() else None
+                value = int(cleaned) if cleaned.isdigit() else None
 
                 if "sum driftsinntekter" in label:
                     out[f"revenue_{year}"] = value
                 elif "driftsresultat" in label:
                     out[f"driftsresultat_{year}"] = value
-                elif "resultat før skatt" in label or "ord. res. f. skatt" in label:
+                elif ("resultat før skatt" in label or 
+                      "ordinært resultat før skatt" in label):
                     out[f"resultat_for_skatt_{year}"] = value
                 elif "sum eiend" in label:
                     out[f"sum_eiendeler_{year}"] = value
                 elif "egenkapital" in label:
                     out[f"egenkapital_{year}"] = value
+
         return out
     except Exception:
         return out
