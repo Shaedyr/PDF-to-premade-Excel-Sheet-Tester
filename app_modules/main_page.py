@@ -3,13 +3,13 @@ from io import BytesIO
 from openpyxl import load_workbook
 
 from app_modules.template_loader import load_template
-from app_modules.sheets.sammendrag.BRREG_info_getter import fetch_company_by_org
+from app_modules.sheets.sammendrag.BRREG_info_getter import fetch_company_by_org, search_BRREG_live
 from app_modules.sheets.sammendrag.BRREG_Proff_info_getter_merger import merge_company_data
 from app_modules.sheets.sammendrag.Summary_getter import generate_company_summary, place_summary
 from app_modules.pdf_parser import extract_fields_from_pdf
 from app_modules.excel_filler import fill_excel
 from app_modules.Excel_download import download_excel_file
-from app_modules.Sheets.Sammendrag.cell_mapping import CELL_MAP
+from app_modules.sheets.sammendrag.cell_mapping import CELL_MAP
 
 
 def run():
@@ -17,9 +17,6 @@ def run():
     st.caption("Hent selskapsinformasjon og oppdater Excel automatisk")
     st.divider()
 
-    # ---------------------------------------------------------
-    # STEP 1: SEARCH BAR + RESULT DROPDOWN
-    # ---------------------------------------------------------
     st.subheader("🔍 Finn selskap")
 
     query = st.text_input(
@@ -31,12 +28,8 @@ def run():
     company_options = []
     results = []
 
-    # IMPORTANT: search_BRREG_live must exist in BRREG_info_getter
-    from app_modules.Sheets.Sammendrag.BRREG_info_getter import search_BRREG_live
-
     if query and len(query) >= 2:
         results = search_BRREG_live(query) or []
-
         company_options = [
             f"{c.get('navn', '')} ({c.get('organisasjonsnummer', '')})"
             for c in results
@@ -59,33 +52,17 @@ def run():
         st.info("Velg et selskap for å fortsette.")
         return
 
-    # ---------------------------------------------------------
-    # STEP 2: LOAD TEMPLATE
-    # ---------------------------------------------------------
     if "template_bytes" not in st.session_state:
         st.session_state.template_bytes = load_template()
 
     template_bytes = st.session_state.template_bytes
 
-    # ---------------------------------------------------------
-    # STEP 3: FETCH COMPANY DATA (BRREG + Proff merger)
-    # ---------------------------------------------------------
     org_number = selected_company_raw.get("organisasjonsnummer")
     company_data = merge_company_data(org_number)
 
-    # ---------------------------------------------------------
-    # STEP 4: SUMMARY
-    # ---------------------------------------------------------
     summary_text = generate_company_summary(company_data)
-
-    # ---------------------------------------------------------
-    # STEP 5: PDF FIELDS
-    # ---------------------------------------------------------
     pdf_fields = extract_fields_from_pdf(pdf_bytes) if pdf_bytes else {}
 
-    # ---------------------------------------------------------
-    # MERGE FIELDS
-    # ---------------------------------------------------------
     merged_fields = {}
     merged_fields.update(company_data)
     merged_fields.update(pdf_fields)
@@ -113,9 +90,6 @@ def run():
 
     st.divider()
 
-    # ---------------------------------------------------------
-    # STEP 6 + 7: PROCESS & DOWNLOAD
-    # ---------------------------------------------------------
     if st.button("🚀 Prosesser & Oppdater Excel", use_container_width=True):
         with st.spinner("Behandler og fyller inn Excel..."):
             excel_bytes = fill_excel(
@@ -137,4 +111,3 @@ def run():
             excel_bytes=excel_bytes,
             company_name=merged_fields.get("company_name", "Selskap")
         )
-
