@@ -100,11 +100,13 @@ def extract_financials_all_years(soup: BeautifulSoup) -> dict:
 # Get_Proff_data
 # ---------------------------------------------------------
 def get_Proff_data(org_number: str) -> dict:
-    html = fetch_Proff_html(org_number) 
-     if not html:
+    html = fetch_Proff_html(org_number)
+
+    if not html:
+        print("No HTML returned from Proff.no")
         return {}
-         
-    print(html[:5000])
+
+    print(html[:5000])   # TEMP DEBUG
 
     soup = BeautifulSoup(html, "html.parser")
 
