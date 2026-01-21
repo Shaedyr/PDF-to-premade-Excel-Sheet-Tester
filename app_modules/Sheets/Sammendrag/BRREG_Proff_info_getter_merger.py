@@ -1,37 +1,36 @@
 from app_modules.Sheets.Sammendrag.BRREG_info_getter import fetch_company_by_org, format_company_data
 from app_modules.Sheets.Sammendrag.Proff_info_getter import get_Proff_data
+import streamlit as st
 
 
 def merge_company_data(org_number: str) -> dict:
-    import streamlit as st
     st.write("MERGER STARTED")
-
-    """
-    Fetches BRREG + Proff data for a company and merges them.
-    - BRREG is primary source (identity, address, NACE, employees).
-    - Proff always overrides revenue_2024.
-    - Proff fills missing fields.
-    - Proff adds financials.
-    """
 
     BRREG_data = format_company_data(fetch_company_by_org(org_number)) or {}
     Proff_data = get_Proff_data(org_number) or {}
 
+    st.write("PROFF DATA RECEIVED:", Proff_data)
+
     merged = BRREG_data.copy()
 
-    # Always prefer Proff revenue
-    if Proff_data.get("revenue_2024"):
-        merged["revenue_2024"] = Proff_data["revenue_2024"]
+    # Override ALL financial fields from Proff
+    financial_keys = [
+        "revenue_2024",
+        "driftsresultat_2024",
+        "resultat_for_skatt_2024",
+        "sum_eiendeler_2024",
+        "egenkapital_2024",
+    ]
 
-    # Add financials if present
-    if Proff_data.get("financials"):
-        merged["financials"] = Proff_data["financials"]
+    for key in financial_keys:
+        if key in Proff_data:
+            merged[key] = Proff_data[key]
 
     # Fill missing fields from Proff
     for key, value in Proff_data.items():
-        if not merged.get(key):
+        if key not in merged or merged[key] in (None, "", 0):
             merged[key] = value
 
-    print("MERGED KEYS:", merged.keys())
+    st.write("MERGED KEYS:", list(merged.keys()))
 
     return merged
