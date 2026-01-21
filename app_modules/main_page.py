@@ -3,19 +3,13 @@ from io import BytesIO
 from openpyxl import load_workbook
 
 from app_modules.template_loader import load_template
-from app_modules.Sheets.Sammendrag.BRREG_info_getter import fetch_company_by_org, search_BRREG_live
-from app_modules.Sheets.Sammendrag.Proff_info_getter import get_Proff_data
+from app_modules.Sheets.Sammendrag.BRREG_info_getter import fetch_company_by_org
 from app_modules.Sheets.Sammendrag.BRREG_Proff_info_getter_merger import merge_company_data
 from app_modules.Sheets.Sammendrag.Summary_getter import generate_company_summary, place_summary
 from app_modules.pdf_parser import extract_fields_from_pdf
 from app_modules.excel_filler import fill_excel
 from app_modules.Excel_download import download_excel_file
 from app_modules.Sheets.Sammendrag.cell_mapping import CELL_MAP
-
-# OPTIONAL: You will implement this later
-def fetch_from_proff(org_number: str) -> dict:
-    """Fallback data source if BRREG is missing fields."""
-    return {}  # Placeholder until you add real Proff.no logic
 
 
 def run():
@@ -37,11 +31,11 @@ def run():
     company_options = []
     results = []
 
-    if query and len(query) >= 2:
-        results = search_BRREG_live(query)
+    # IMPORTANT: search_BRREG_live must exist in BRREG_info_getter
+    from app_modules.Sheets.Sammendrag.BRREG_info_getter import search_BRREG_live
 
-        if not isinstance(results, list):
-            results = []
+    if query and len(query) >= 2:
+        results = search_BRREG_live(query) or []
 
         company_options = [
             f"{c.get('navn', '')} ({c.get('organisasjonsnummer', '')})"
@@ -59,7 +53,6 @@ def run():
         idx = company_options.index(selected_label)
         selected_company_raw = results[idx]
 
-    # PDF upload (always outside the IF block)
     pdf_bytes = st.file_uploader("Last opp PDF", type=["pdf"])
 
     if not selected_company_raw:
@@ -79,17 +72,6 @@ def run():
     # ---------------------------------------------------------
     org_number = selected_company_raw.get("organisasjonsnummer")
     company_data = merge_company_data(org_number)
-
-    # ---------------------------------------------------------
-    # STEP B: FALLBACK TO PROFF.NO IF BRREG IS MISSING FIELDS
-    # ---------------------------------------------------------
-    missing_keys = [k for k, v in company_data.items() if not v]
-
-    if missing_keys:
-        proff_data = fetch_from_proff(org_number)
-        for key in missing_keys:
-            if proff_data.get(key):
-                company_data[key] = proff_data[key]
 
     # ---------------------------------------------------------
     # STEP 4: SUMMARY
@@ -126,7 +108,7 @@ def run():
         st.write("**NACE-beskrivelse:**", merged_fields.get("nace_description", ""))
 
     with col_right:
-        st.markdown("**Sammendrag (går i 'Om oss' / 'Skriv her' celle):**")
+        st.markdown("**Sammendrag:**")
         st.info(summary_text or "Ingen tilgjengelig selskapsbeskrivelse.")
 
     st.divider()
@@ -142,7 +124,6 @@ def run():
                 cell_map=CELL_MAP
             )
 
-            # Place summary text into Sammendrag sheet
             wb = load_workbook(filename=BytesIO(excel_bytes))
             ws = wb["Sammendrag"]
             place_summary(ws, summary_text)
@@ -156,8 +137,3 @@ def run():
             excel_bytes=excel_bytes,
             company_name=merged_fields.get("company_name", "Selskap")
         )
-
-
-
-
-
