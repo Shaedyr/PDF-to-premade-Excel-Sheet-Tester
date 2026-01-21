@@ -54,6 +54,8 @@ def extract_financials_all_years(soup: BeautifulSoup) -> dict:
         if not table:
             return out
 
+        print("TABLE FOUND:", table is not None)
+
         # Identify year columns
         header_cells = table.find("thead").find_all("th")
         years = {}
