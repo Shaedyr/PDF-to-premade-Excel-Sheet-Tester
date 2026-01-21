@@ -1,7 +1,5 @@
 CELL_MAP = {
     "Sammendrag": {
-
-        # Basic company info
         "company_name": "B3",
         "org_number": "B4",
         "address": "B5",
@@ -15,10 +13,10 @@ CELL_MAP = {
         "economy": "B16",
         "company_summary": "A51",
 
-        # BRREG revenue (keep this separate)
+        # BRREG revenue
         "revenue_2024": "B12",
 
-        # Financial figures from Proff (2024–2022)
+        # Proff financials
         "revenue_2024_proff": "E11",
         "revenue_2023": "F11",
         "revenue_2022": "G11",
