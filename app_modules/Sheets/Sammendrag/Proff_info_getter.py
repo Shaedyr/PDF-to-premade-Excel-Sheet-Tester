@@ -101,9 +101,10 @@ def extract_financials_all_years(soup: BeautifulSoup) -> dict:
 # ---------------------------------------------------------
 def get_Proff_data(org_number: str) -> dict:
     html = fetch_Proff_html(org_number) 
-    print(html[:5000])
-    if not html:
+     if not html:
         return {}
+         
+print(html[:5000])
 
     soup = BeautifulSoup(html, "html.parser")
 
