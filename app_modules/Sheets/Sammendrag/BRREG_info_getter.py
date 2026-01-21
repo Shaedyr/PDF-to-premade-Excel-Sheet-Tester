@@ -1,118 +1,72 @@
-import streamlit as st
 import requests
+from bs4 import BeautifulSoup
 
-BRREG_SEARCH_URL = "https://data.brreg.no/enhetsregisteret/api/enheter"
-BRREG_ENTITY_URL = "https://data.brreg.no/enhetsregisteret/api/enheter/{}"
-
-
-# ---------------------------------------------------------
-# LIVE SEARCH
-# ---------------------------------------------------------
-def search_BRREG_live(name: str):
-    """
-    Live search for companies in Brønnøysund.
-    Returns a list of raw API objects.
-    """
-
-    name = (name or "").strip()
-    if len(name) < 2:
-        return []
-
-    try:
-        r = requests.get(
-            BRREG_SEARCH_URL,
-            params={"navn": name, "size": 10},
-            timeout=10
-        )
-        r.raise_for_status()
-
-        data = r.json()
-        return data.get("_embedded", {}).get("enheter", []) or []
-
-    except Exception:
-        return []
-
-
-# ---------------------------------------------------------
-# FETCH FULL COMPANY DATA
-# ---------------------------------------------------------
-def fetch_company_by_org(org_number: str):
-    """
-    Fetch full company details using org number.
-    Returns raw API JSON or None.
-    """
-
-    org_number = (org_number or "").strip()
-    if not org_number.isdigit():
+def fetch_Proff_html(org_number: str):
+    if not org_number or not org_number.isdigit():
         return None
 
-    try:
-        r = requests.get(
-            BRREG_ENTITY_URL.format(org_number),
-            timeout=10
-        )
-        r.raise_for_status()
-        return r.json()
+    url = f"https://www.proff.no/regnskap/{org_number}"
 
+    try:
+        r = requests.get(url, timeout=10)
+        r.raise_for_status()
+        return r.text
     except Exception:
         return None
 
 
-# ---------------------------------------------------------
-# FORMAT RAW API DATA INTO CLEAN DICT
-# ---------------------------------------------------------
-def format_company_data(api_data):
-    """
-    Converts raw Brønnøysund API data into a clean dictionary
-    that the rest of the app can use.
-    """
+def extract_financials_all_years(soup: BeautifulSoup) -> dict:
+    out = {}
 
-    if not api_data:
-        return {}
+    # NEW: Proff changed table class → use more flexible selector
+    table = soup.find("table")
+    if not table:
+        return out
 
-    out = {
-        "company_name": api_data.get("navn", ""),
-        "org_number": api_data.get("organisasjonsnummer", ""),
-        "homepage": api_data.get("hjemmeside", ""),
-        "employees": api_data.get("antallAnsatte", ""),
-        "registration_date": api_data.get("stiftelsesdato", ""),
-        "nace_code": "",
-        "nace_description": "",
-        "address": "",
-        "post_nr": "",
-        "city": "",
-        "company_summary": "",
-    }
+    rows = table.find_all("tr")
+    if not rows:
+        return out
 
-    # Address
-    addr = api_data.get("forretningsadresse") or {}
-    if addr:
-        a = addr.get("adresse", [])
-        out["address"] = ", ".join(a) if isinstance(a, list) else a
-        out["post_nr"] = addr.get("postnummer", "")
-        out["city"] = addr.get("poststed", "")
+    # Detect year columns
+    header_cells = rows[0].find_all(["th", "td"])
+    years = {}
+    for idx, cell in enumerate(header_cells):
+        text = cell.get_text(strip=True)
+        if text.isdigit():
+            years[text] = idx
 
-    # NACE
-    nace = api_data.get("naeringskode1") or {}
-    if nace:
-        out["nace_code"] = nace.get("kode", "")
-        out["nace_description"] = nace.get("beskrivelse", "")
+    # Parse rows
+    for row in rows[1:]:
+        cells = row.find_all("td")
+        if not cells:
+            continue
 
-    # Company summary
-    out["company_summary"] = (
-    f"{out['company_name']} er et registrert norsk selskap. "
-    f"Selskapet ble registrert i {api_data.get('registreringsdatoEnhetsregisteret', '')}. "
-    f"Selskapet har {out['employees']} ansatte. "
-    f"Virksomheten opererer innen bransjen: {out['nace_description']}."
-    )
+        label = cells[0].get_text(strip=True).lower()
+
+        for year, idx in years.items():
+            if idx >= len(cells):
+                continue
+
+            raw = cells[idx].get_text(strip=True)
+            cleaned = raw.replace(" ", "").replace(".", "").replace(",", "")
+            value = int(cleaned) if cleaned.isdigit() else None
+
+            if "driftsinntekter" in label:
+                out[f"revenue_{year}"] = value
+            elif "driftsresultat" in label:
+                out[f"driftsresultat_{year}"] = value
+            elif "resultat før skatt" in label:
+                out[f"resultat_for_skatt_{year}"] = value
 
     return out
 
 
-# ---------------------------------------------------------
-# OPTIONAL DEBUG PAGE
-# ---------------------------------------------------------
-def run():
-    st.title("🔍 Company Data Module")
-    st.write("Dette er et backend-modul og brukes av andre sider.")
-    st.info("Ingen interaktiv funksjon her. Brukes av Input- og Summary-moduler.")
+def get_Proff_data(org_number: str) -> dict:
+    html = fetch_Proff_html(org_number)
+    if not html:
+        return {}
+
+    soup = BeautifulSoup(html, "html.parser")
+
+    data = extract_financials_all_years(soup)
+    return data
