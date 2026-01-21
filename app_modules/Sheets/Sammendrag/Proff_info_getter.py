@@ -104,7 +104,7 @@ def get_Proff_data(org_number: str) -> dict:
      if not html:
         return {}
          
-print(html[:5000])
+    print(html[:5000])
 
     soup = BeautifulSoup(html, "html.parser")
 
