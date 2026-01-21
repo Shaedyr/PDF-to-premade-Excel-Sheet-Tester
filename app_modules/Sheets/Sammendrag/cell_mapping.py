@@ -1,34 +1,34 @@
 CELL_MAP = {
-  "Sammendrag": {  
-        # Cell mapping for the first part on Sheet 1
+    "Sammendrag": {
 
-    
-        "company_name": "B3",          # Company name
-        "org_number": "B4",            # Organization number
-        "address": "B5",               # Address
-        "post_nr": "B6",               # Postal number
-        "city": "B7",                  # Post address / city
-        "employees": "B8",             # Number of employees
-        "nace_code": "B9",             # NACE code
-        "nace_description": "B10",     # NACE description
-        "homepage": "B11",             # Website
-        "company_today": "B13",        # Today's company status
-    
-        "economy": "B16",              # Economy / financial situation
-        "company_summary": "A51",       # Summary text (Om oss)
+        # Basic company info
+        "company_name": "B3",
+        "org_number": "B4",
+        "address": "B5",
+        "post_nr": "B6",
+        "city": "B7",
+        "employees": "B8",
+        "nace_code": "B9",
+        "nace_description": "B10",
+        "homepage": "B11",
+        "company_today": "B13",
+        "economy": "B16",
+        "company_summary": "A51",
 
-        #Financial figures for the last 3 years 2024-2022 (Proff.no)
-        "revenue_2024": "E11",
+        # BRREG revenue (keep this separate)
+        "revenue_2024": "B12",
+
+        # Financial figures from Proff (2024–2022)
+        "revenue_2024_proff": "E11",
         "revenue_2023": "F11",
         "revenue_2022": "G11",
+
         "driftsresultat_2024": "E12",
         "driftsresultat_2023": "F12",
         "driftsresultat_2022": "G12",
+
         "resultat_for_skatt_2024": "E13",
         "resultat_for_skatt_2023": "F13",
         "resultat_for_skatt_2022": "G13",
-
-
     }
 }
- 
